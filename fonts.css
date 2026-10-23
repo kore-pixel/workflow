@@ -1,0 +1,16 @@
+/* ───────── 폰트 설정 ─────────
+   1) Pretendard : 본문용 (CDN)
+   2) 조선굴림체 : 제목/숫자 강조용 (눈누 웹폰트)
+   눈누에서 복사한 @font-face 코드가 따로 있다면 아래 "조선굴림체" 부분을
+   통째로 바꿔 붙여도 돼요. font-family 이름만 'ChosunGu' 로 맞춰 주세요. */
+
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+/* 조선굴림체 (눈누) */
+@font-face {
+  font-family: 'ChosunGu';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunGu.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
