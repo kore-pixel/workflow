@@ -205,7 +205,18 @@ function mountTimer() {
     </div>
     <div class="card total"><div class="cap" id="totCap"></div><div class="num" id="totNum"></div></div>
     <div><div class="sec">기록<span class="count" id="sessCount"></span></div><div class="card" id="sessList"></div></div>
-    <div><div class="sec">최근 7일</div><div class="card"><div class="bars" id="bars"></div></div></div>`;
+    <div><div class="sec">월간 공부 시간</div><div class="card calcard" id="cal"></div></div>`;
+  $('#cal').onclick = e => {
+    const nav = e.target.closest('[data-nav]');
+    if (nav) {
+      const [y, m] = V.calMonth.split('-').map(Number);
+      const d = nav.dataset.nav === 'today' ? new Date() : new Date(y, m - 1 + Number(nav.dataset.nav), 1);
+      V.calMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+      renderCal(); return;
+    }
+    const c = e.target.closest('[data-date]');
+    if (c && !c.classList.contains('fut')) setDate(c.dataset.date);
+  };
   $('#tgt').onchange = () => { P.T.taskId = $('#tgt').value; P.saveT(); refreshTimer(); };
   $('#tLabel').oninput = () => { P.T.label = $('#tLabel').value; P.saveT(); };
   $('#tgo').onclick = () => {
@@ -265,16 +276,57 @@ function refreshTimer() {
       <button class="mini" data-del aria-label="기록 삭제">${ICON.x}</button></div>`;
   }).join('') : '<div class="empty" style="padding:14px 8px">이 날은 아직 기록이 없어요.</div>';
 
-  const days = [];
-  for (let i = 6; i >= 0; i--) { const d = addDays(V.date, -i); days.push([d, P.dayTotal(d)]); }
-  const max = Math.max(...days.map(x => x[1]), 1);
-  $('#bars').innerHTML = days.map(([d, sec]) => {
-    const h = sec ? Math.max(6, Math.round(sec / max * 68)) : 4;
-    const v = sec >= 3600 ? (sec / 3600).toFixed(1) + 'h' : sec >= 60 ? Math.round(sec / 60) + 'm' : '';
-    return `<div class="bcol ${d === today ? 'today' : ''} ${d === V.date ? 'sel' : ''}"><div class="v">${v}</div><div class="fill" style="height:${h}px;${sec ? '' : 'opacity:.35'}"></div><div class="d">${DOW[parseYmd(d).getDay()]}</div></div>`;
-  }).join('');
+  if (V.calFor !== V.date) { V.calFor = V.date; V.calMonth = V.date.slice(0, 7); }
+  renderCal();
 }
-setInterval(() => { if (V.tab === 'timer') tickTimer(); }, 1000);
+
+/* 월간 달력: 날짜별 공부 시간(HH:MM) + 시간대별 색 농도 */
+const calLevel = sec => sec <= 0 ? 0 : sec >= 12 * 3600 ? 5 : sec >= 10 * 3600 ? 4 : sec >= 7 * 3600 ? 3 : sec >= 4 * 3600 ? 2 : 1;
+const calHM = sec => `${pad(Math.floor(sec / 3600))}:${pad(Math.floor((sec % 3600) / 60))}`;
+let calMinute = -1;
+function renderCal() {
+  const box = $('#cal'); if (!box) return;
+  if (!V.calMonth) V.calMonth = V.date.slice(0, 7);
+  const today = todayStr();
+  const [y, m] = V.calMonth.split('-').map(Number);
+  const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7;          // 월요일 시작
+  const weeks = Math.ceil((lead + new Date(y, m, 0).getDate()) / 7);
+  const start = ymd(new Date(y, m - 1, 1 - lead));
+
+  const map = {};
+  P.S.sessions.forEach(s => { if (!s.deleted) map[s.date] = (map[s.date] || 0) + s.sec; });
+  if (P.T.running || P.T.accSec > 0) {                             // 진행 중인 타이머도 포함
+    const k = ymd(new Date(P.T.sessionStart || Date.now()));
+    map[k] = (map[k] || 0) + P.elapsed();
+  }
+
+  let cells = '', monthSec = 0;
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = addDays(start, i), sec = map[d] || 0, inMonth = d.slice(0, 7) === V.calMonth, fut = d > today;
+    if (inMonth) monthSec += sec;
+    const label = sec > 0 ? calHM(sec) : (fut ? '' : d === today ? '–' : 'Day Off');
+    cells += `<button type="button" class="cal-c l${calLevel(sec)}${inMonth ? '' : ' out'}${d === V.date ? ' sel' : ''}${d === today ? ' today' : ''}${fut ? ' fut' : ''}" data-date="${d}" aria-label="${fmtDateShort(d)} ${sec ? fmtDur(sec) : '기록 없음'}">
+      <span class="n">${parseYmd(d).getDate()}</span><span class="t">${label}</span></button>`;
+  }
+  const head = ['월', '화', '수', '목', '금', '토', '일'].map((w, i) => `<div class="calw${i === 5 ? ' sat' : i === 6 ? ' sun' : ''}">${w}</div>`).join('');
+  box.innerHTML = `
+    <div class="calhead">
+      <button class="icobtn" data-nav="-1" aria-label="이전 달">${ICON.prev}</button>
+      <button class="caltitle" data-nav="today" aria-label="이번 달로 이동">${y}년 ${m}월</button>
+      <button class="icobtn" data-nav="1" aria-label="다음 달">${ICON.next}</button>
+    </div>
+    <div class="calgrid">${head}${cells}</div>
+    <div class="calfoot">
+      <div class="legend"><i class="l1">0+</i><i class="l2">4+</i><i class="l3">7+</i><i class="l4">10+</i><i class="l5">12+</i></div>
+      <span class="calsum">${m}월: ${Math.floor(monthSec / 3600)}H ${Math.floor((monthSec % 3600) / 60)}M</span>
+    </div>`;
+}
+setInterval(() => {
+  if (V.tab !== 'timer') return;
+  tickTimer();
+  const mk = Math.floor(P.elapsed() / 60);                         // 분이 바뀔 때만 달력 갱신
+  if (mk !== calMinute) { calMinute = mk; renderCal(); }
+}, 1000);
 
 /* ═════════════ 가계부 ═════════════ */
 function mountLedger() {

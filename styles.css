@@ -275,3 +275,35 @@ code, .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-
   .tab svg { display: none; }
   .pill-input input[type=date] { width: 124px; }
 }
+
+/* ───── 월간 공부 시간 달력 ───── */
+.calcard { padding: 10px 8px 12px; }
+.calhead { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 8px; }
+.caltitle { border: 0; background: transparent; font-family: var(--font-title); font-size: 18px; font-weight: 600; color: var(--ink); padding: 6px 12px; border-radius: 999px; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.calw { text-align: center; font-size: 12.5px; color: var(--ink2); padding: 2px 0 5px; }
+.calw.sat, .calw.sun { color: var(--ink3); }
+.cal-c {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-height: 54px; padding: 4px 0; border: 0; border-radius: 8px;
+  background: #f1f6f8; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.cal-c .n { font-size: 11.5px; color: rgba(39, 51, 61, .55); line-height: 1; }
+.cal-c .t { font-size: 11.5px; font-weight: 600; line-height: 1; white-space: nowrap; letter-spacing: -.01em; }
+.cal-c.l0 .t { font-size: 9.5px; font-weight: 400; color: var(--ink3); letter-spacing: 0; }
+.cal-c.today .n { color: var(--ink); font-weight: 800; }
+.cal-c.out { opacity: .5; }
+.cal-c.fut { background: #f8fafb; cursor: default; }
+.cal-c.sel { outline: 2px solid #28495c; outline-offset: -2px; }
+.cal-c:active:not(.fut) { filter: brightness(.95); }
+.l1 { background: #d6f0f7; }
+.l2 { background: #b0e1ee; }
+.l3 { background: #88d0e4; }
+.l4 { background: #62bcd6; }
+.l5 { background: #46a8c8; }
+.cal-c.l0 { background: #f1f6f8; }
+.cal-c.fut.l0 { background: #f8fafb; }
+.calfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 0 2px; }
+.legend { display: flex; }
+.legend i { font-style: normal; font-size: 11px; padding: 4px 7px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.calsum { font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; white-space: nowrap; }
